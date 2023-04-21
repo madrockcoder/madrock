@@ -1,0 +1,51 @@
+[
+    {
+        "iso2": "US",
+        "name": "English"
+      },
+      {
+        
+        
+        "iso2": "IT",
+        "name": "Italian"
+      },
+      {
+        
+        "iso2": "TR", 
+        "name": "Turkish"
+      },
+      {
+        
+        "iso2": "PL",
+        "name": "Polish"
+      },
+      {
+        
+        "iso2": "DE",
+        "name": "German"
+      },
+      {
+        "iso2": "BG",
+        "name": "Bulgaria"
+      },
+      {
+       
+        "iso2": "LT", 
+        "name": "Lithuania"
+      },
+      {
+      
+        "iso2": "UA",
+        "name": "Ukranian"
+      },
+      {
+       
+        "iso2": "GR",
+        "name": "Greek"
+      },
+      {
+        
+        "iso2": "CN",
+        "name": "Mandarin"
+      }
+]

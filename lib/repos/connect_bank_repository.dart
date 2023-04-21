@@ -1,0 +1,173 @@
+import 'dart:async';
+
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:geniuspay/core/errors/errors.dart';
+import 'package:geniuspay/data_sources/wallet_data_source/connect_bank_data_source.dart';
+import 'package:geniuspay/environment_config.dart';
+import 'package:geniuspay/models/connect_bank_response.dart';
+import 'package:geniuspay/models/nordigen_bank.dart';
+import 'package:injectable/injectable.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
+import '../util/essentials.dart';
+
+abstract class ConnectBankRepository {
+  Future<Either<Failure, ConnectBankResponse>> initiateRequisition(
+      String accountId, String aspsp);
+  Future<Either<Failure, ConnectBankResponse>> getStatus(String aspsp);
+  Future<Either<Failure, List<NordigenBank>>> getBankAccountsFromCountry(
+      String country);
+}
+
+@LazySingleton(as: ConnectBankRepository)
+class ConnectBankRepositoryImpl extends ConnectBankRepository {
+  ConnectBankRepositoryImpl({
+    required this.remoteDataSource,
+  });
+
+  final ConnectBankDataSource remoteDataSource;
+
+  @override
+  Future<Either<Failure, List<NordigenBank>>> getBankAccountsFromCountry(
+      String country) async {
+    try {
+      final result = await remoteDataSource.getBankAccountsFromCountry(country);
+      return Right(result);
+    } catch (e, stackTrace) {
+      debugPrint(e);
+      if (e.runtimeType != NoInternetException &&
+          EnvironmentConfig.env == Flavor.live) {
+        final message = e is DioError ? e.response : '';
+        unawaited(
+            Sentry.captureException(e, stackTrace: stackTrace, hint: message));
+        unawaited(FirebaseCrashlytics.instance
+            .recordError(e, stackTrace, reason: message));
+      }
+      if (e is NoInternetException) {
+        return Left(NoInternetFailure());
+      }
+      if (e is DioError) {
+        debugPrint(e.response);
+        if (e.response != null &&
+            e.response!.data != null &&
+            e.response!.data != '' &&
+            e.response!.data is Map) {
+          return Left(
+            ServerFailure(
+              // ignore: avoid_dynamic_calls
+              message: e.response!.data['message'] ??
+                  'Service unavailable, please try again!',
+            ),
+          );
+        } else {
+          return const Left(
+            ServerFailure(
+              message: 'Server error, please try again',
+            ),
+          );
+        }
+      }
+      if (e is ServerException) {
+        return Left(ServerFailure(message: e.message));
+      }
+      return Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, ConnectBankResponse>> initiateRequisition(
+      String accountId, String aspsp) async {
+    try {
+      final result =
+          await remoteDataSource.initiateRequisition(accountId, aspsp);
+      return Right(result);
+    } catch (e, stackTrace) {
+      debugPrint(e);
+      debugPrint(e.runtimeType);
+      if (e.runtimeType != NoInternetException &&
+          EnvironmentConfig.env == Flavor.live) {
+        final message = e is DioError ? e.response : '';
+        unawaited(
+            Sentry.captureException(e, stackTrace: stackTrace, hint: message));
+        unawaited(FirebaseCrashlytics.instance
+            .recordError(e, stackTrace, reason: message));
+      }
+      if (e is NoInternetException) {
+        return Left(NoInternetFailure());
+      }
+      if (e is DioError) {
+        debugPrint(e.response);
+        if (e.response != null &&
+            e.response!.data != null &&
+            e.response!.data != '' &&
+            e.response!.data is Map) {
+          return Left(
+            ServerFailure(
+              // ignore: avoid_dynamic_calls
+              message: e.response!.data['message'] ??
+                  'Service unavailable, please try again!',
+            ),
+          );
+        } else {
+          return const Left(
+            ServerFailure(
+              message: 'Server error, please try again',
+            ),
+          );
+        }
+      }
+      if (e is ServerException) {
+        return Left(ServerFailure(message: e.message));
+      }
+      return Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, ConnectBankResponse>> getStatus(String aspsp) async {
+    try {
+      final result = await remoteDataSource.getStatus(aspsp);
+      return Right(result);
+    } catch (e, stackTrace) {
+      debugPrint(e);
+      if (e.runtimeType != NoInternetException &&
+          EnvironmentConfig.env == Flavor.live) {
+        final message = e is DioError ? e.response : '';
+        unawaited(
+            Sentry.captureException(e, stackTrace: stackTrace, hint: message));
+        unawaited(FirebaseCrashlytics.instance
+            .recordError(e, stackTrace, reason: message));
+      }
+      if (e is NoInternetException) {
+        return Left(NoInternetFailure());
+      }
+      if (e is DioError) {
+        debugPrint(e.response);
+        if (e.response != null &&
+            e.response!.data != null &&
+            e.response!.data != '' &&
+            e.response!.data is Map) {
+          return Left(
+            ServerFailure(
+              // ignore: avoid_dynamic_calls
+              message: e.response!.data['message'] ??
+                  'Service unavailable, please try again!',
+            ),
+          );
+        } else {
+          return const Left(
+            ServerFailure(
+              message: 'Server error, please try again',
+            ),
+          );
+        }
+      }
+      if (e is ServerException) {
+        return Left(ServerFailure(message: e.message));
+      }
+      return Left(UnknownFailure());
+    }
+  }
+}
